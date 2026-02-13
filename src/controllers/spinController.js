@@ -43,7 +43,7 @@ exports.playSpin = async (req, res) => {
         const rewardFound = REWARDS[randomIndex];
 
         // Lưu vào DB
-        const result = await Spin.save({
+        const result = await Spin.create({
             ip,
             userName,
             reward: rewardFound,

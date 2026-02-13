@@ -1,19 +1,37 @@
-const { Pool } = require('pg');
+const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-});
+const sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
+    {
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        dialect: 'postgres',
+        logging: process.env.NODE_ENV === 'development' ? console.log : false,
+        pool: {
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+        },
+        define: {
+            timestamps: true, // Tự động thêm createdAt và updatedAt
+            underscored: true // Sử dụng snake_case (created_at) thay vì camelCase
+        }
+    }
+);
 
-pool.on('error', (err) => {
-    console.error('Lỗi kết nối PostgreSQL bất ngờ:', err);
-    process.exit(-1);
-});
-
-module.exports = {
-    query: (text, params) => pool.query(text, params),
+const testConnection = async () => {
+    try {
+        await sequelize.authenticate();
+        console.log('✅ Kết nối database thành công qua Sequelize.');
+    } catch (error) {
+        console.error('❌ Không thể kết nối tới database:', error);
+    }
 };
+
+testConnection();
+
+module.exports = sequelize;

@@ -5,9 +5,15 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const spinRoutes = require('./routes/spinRoutes');
+const sequelize = require('./config/db');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Sync Database
+sequelize.sync({ alter: false }).then(() => {
+    console.log('🔄 Database đã được đồng bộ.');
+});
 
 // Middlewares
 app.use(helmet()); // Bảo mật Headers
