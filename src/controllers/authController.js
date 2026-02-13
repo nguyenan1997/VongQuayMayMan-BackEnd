@@ -32,6 +32,7 @@ exports.register = async (req, res) => {
             data: {
                 id: user.id,
                 phoneNumber: user.phoneNumber,
+                fullName: user.fullName,
                 token: generateToken(user.id)
             }
         });
@@ -51,6 +52,8 @@ exports.login = async (req, res) => {
                 data: {
                     id: user.id,
                     phoneNumber: user.phoneNumber,
+                    fullName: user.fullName,
+                    spinResult: user.spinResult,
                     token: generateToken(user.id)
                 }
             });
