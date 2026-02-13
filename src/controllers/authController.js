@@ -1,4 +1,5 @@
 const { User } = require('../models');
+const { Op } = require('sequelize');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
@@ -111,6 +112,11 @@ exports.updateSpinResult = async (req, res) => {
 exports.getAllResults = async (req, res) => {
     try {
         const users = await User.findAll({
+            where: {
+                role: {
+                    [Op.ne]: 'admin' // Không lấy admin
+                }
+            },
             attributes: ['id', 'phoneNumber', 'fullName', 'spinResult', 'lastSpinAt', 'spinCount'],
             order: [['lastSpinAt', 'DESC']]
         });

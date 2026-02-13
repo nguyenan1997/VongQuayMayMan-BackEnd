@@ -24,7 +24,7 @@ const User = sequelize.define('User', {
     },
     fullName: {
         type: DataTypes.STRING(100),
-        allowNull: false,
+        allowNull: true,
         field: 'full_name'
     },
     role: {
