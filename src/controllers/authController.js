@@ -9,19 +9,19 @@ const generateToken = (id) => {
 
 exports.register = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { phoneNumber, password } = req.body;
 
-        if (!username || !password) {
+        if (!phoneNumber || !password) {
             return res.status(400).json({ success: false, message: 'Vui lòng nhập số điện thoại và mật khẩu' });
         }
 
-        const userExists = await User.findOne({ where: { username } });
+        const userExists = await User.findOne({ where: { phoneNumber } });
         if (userExists) {
             return res.status(400).json({ success: false, message: 'Số điện thoại này đã được đăng ký' });
         }
 
         const user = await User.create({
-            username,
+            phoneNumber,
             password
         });
 
@@ -29,7 +29,7 @@ exports.register = async (req, res) => {
             success: true,
             data: {
                 id: user.id,
-                username: user.username,
+                phoneNumber: user.phoneNumber,
                 token: generateToken(user.id)
             }
         });
@@ -40,20 +40,20 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { phoneNumber, password } = req.body;
 
-        const user = await User.findOne({ where: { username } });
+        const user = await User.findOne({ where: { phoneNumber } });
         if (user && (await user.comparePassword(password))) {
             res.json({
                 success: true,
                 data: {
                     id: user.id,
-                    username: user.username,
+                    phoneNumber: user.phoneNumber,
                     token: generateToken(user.id)
                 }
             });
         } else {
-            res.status(401).json({ success: false, message: 'Sai tên đăng nhập hoặc mật khẩu' });
+            res.status(401).json({ success: false, message: 'Sai số điện thoại hoặc mật khẩu' });
         }
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -79,8 +79,18 @@ exports.updateSpinResult = async (req, res) => {
         }
 
         const user = await User.findByPk(req.user.id);
+
+        // Kiểm tra nếu người dùng đã có kết quả rồi thì không cho quay nữa
+        if (user.spinResult) {
+            return res.status(403).json({
+                success: false,
+                message: 'Bạn đã thực hiện lượt quay và nhận quà rồi!'
+            });
+        }
+
         user.spinResult = result;
         user.lastSpinAt = new Date();
+        user.spinCount = (user.spinCount || 0) + 1;
         await user.save();
 
         res.json({
@@ -100,7 +110,7 @@ exports.updateSpinResult = async (req, res) => {
 exports.getAllResults = async (req, res) => {
     try {
         const users = await User.findAll({
-            attributes: ['id', 'username', 'fullName', 'spinResult', 'lastSpinAt'],
+            attributes: ['id', 'phoneNumber', 'fullName', 'spinResult', 'lastSpinAt', 'spinCount'],
             order: [['lastSpinAt', 'DESC']]
         });
         res.json({ success: true, data: users });

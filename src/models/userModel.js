@@ -8,13 +8,14 @@ const User = sequelize.define('User', {
         primaryKey: true,
         autoIncrement: true
     },
-    username: {
+    phoneNumber: {
         type: DataTypes.STRING(20),
         allowNull: false,
         unique: true,
+        field: 'phone_number', // Tên cột trong DB
         validate: {
-            is: /^[0-9]+$/i, // Chỉ cho phép chữ số
-            len: [10, 11]    // Độ dài sđt Việt Nam thông thường
+            is: /^[0-9]+$/i,
+            len: [10, 11]
         }
     },
     password: {
@@ -44,6 +45,11 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
         allowNull: true,
         field: 'last_spin_at'
+    },
+    spinCount: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        field: 'spin_count'
     }
 }, {
     tableName: 'users',

@@ -4,6 +4,16 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
+// 1. BỘ THEO DÕI LỖI TOÀN CỤC (Cực kỳ quan trọng để tìm nguyên nhân sập)
+process.on('uncaughtException', (err) => {
+    console.error('💥 LỖI HỆ THỐNG (Uncaught Exception):', err.message);
+    console.error(err.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('☄️ LỖI CHƯA XỬ LÝ (Unhandled Rejection) tại:', promise, 'Lý do:', reason);
+});
+
 const userRoutes = require('./routes/userRoutes');
 const { sequelize } = require('./models');
 const swaggerUi = require('swagger-ui-express');
@@ -12,49 +22,62 @@ const swaggerSpecs = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Swagger Documentation
+// 2. MIDDLEWARES
+app.use(helmet());
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.json());
+
+// 3. DOCUMENTATION
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
-// Sync Database (Sử dụng alter: true để cập nhật bảng mới)
-sequelize.sync({ alter: true }).then(async () => {
-    console.log('🔄 Database đã được đồng bộ (Chỉ bảng User).');
-
-    // Tạo tài khoản admin mặc định nếu chưa tồn tại
-    const { User } = require('./models');
-    try {
-        const adminExists = await User.findOne({ where: { username: '0912345678' } });
-        if (!adminExists) {
-            await User.create({
-                username: '0912345678',
-                password: 'admin', // Sẽ tự động được mã hóa bởi hook beforeCreate
-                role: 'admin',
-                fullName: 'System Administrator'
-            });
-            console.log('✅ Đã tạo tài khoản admin mặc định (0912345678/admin)');
-        }
-    } catch (error) {
-        console.error('❌ Lỗi khi tạo tài khoản admin:', error.message);
-    }
-});
-
-// Middlewares
-app.use(helmet()); // Bảo mật Headers
-app.use(cors()); // Cho phép Frontend truy cập
-app.use(morgan('dev')); // Log yêu cầu truy cập
-app.use(express.json()); // Đọc body JSON
-
-// API Routes
+// 4. API ROUTES
 app.use('/api/v1/users', userRoutes);
 
-// Xử lý lỗi 404
+// Xử lý route không tồn tại
 app.use((req, res) => {
     res.status(404).json({ success: false, message: 'API Route không tồn tại' });
 });
 
-// Khởi chạy Server
-app.listen(PORT, () => {
-    console.log('====================================');
-    console.log(`🚀 SERVER RUNNING AT: http://localhost:${PORT}`);
-    console.log(`📅 NGÀY KHỞI CHẠY: ${new Date().toLocaleString()}`);
-    console.log('====================================');
-});
+// 5. KHỞI CHẠY SERVER
+const startServer = async () => {
+    try {
+        // Mở cổng Server trước để đảm bảo Process luôn chạy
+        app.listen(PORT, () => {
+            console.log('====================================');
+            console.log(`🚀 SERVER ĐANG CHẠY TẠI: http://localhost:${PORT}`);
+            console.log(`📝 Swagger Docs: http://localhost:${PORT}/api-docs`);
+            console.log('====================================');
+        });
+
+        // Kết nối Database song song
+        console.log('⏳ Đang kết nối tới Database cục bộ...');
+        await sequelize.authenticate();
+        console.log('✅ Kết nối Database thành công.');
+
+        // Đồng bộ cấu trúc bảng
+        await sequelize.sync({ alter: true });
+        console.log('✅ Bảng dữ liệu đã được đồng bộ.');
+
+        // Kiểm tra/Tạo Admin
+        const { User } = require('./models');
+        const adminExists = await User.findOne({ where: { phoneNumber: '0912345678' } });
+        if (!adminExists) {
+            await User.create({
+                phoneNumber: '0912345678',
+                password: 'admin',
+                role: 'admin',
+                fullName: 'System Administrator'
+            });
+            console.log('👤 Đã tạo tài khoản admin mặc định.');
+        } else {
+            console.log('ℹ️  Tài khoản Admin đã sẵn sàng.');
+        }
+
+    } catch (error) {
+        console.error('❌ LỖI KHỞI ĐỘNG:', error.message);
+        console.log('💡 Gợi ý: Hãy kiểm tra xem Database "lucky_spin" đã có chưa và mật khẩu trong .env đúng chưa.');
+    }
+};
+
+startServer();

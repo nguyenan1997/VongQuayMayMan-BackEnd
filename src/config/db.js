@@ -1,22 +1,21 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-// Fix lỗi SELF_SIGNED_CERT_IN_CHAIN khi kết nối Aiven trên Windows
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
 const sequelize = new Sequelize(
-    process.env.DATABASE_URL,
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
     {
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
         dialect: 'postgres',
         logging: process.env.NODE_ENV === 'development' ? console.log : false,
-        dialectOptions: {
+        dialectOptions: process.env.DB_SSL === 'true' ? {
             ssl: {
                 require: true,
                 rejectUnauthorized: false
             }
-        },
-        // Thêm cấu hình này để tương thích tốt hơn với SSL trên môi trường Cloud
-        ssl: true,
+        } : {},
         pool: {
             max: 5,
             min: 0,
@@ -33,9 +32,10 @@ const sequelize = new Sequelize(
 const testConnection = async () => {
     try {
         await sequelize.authenticate();
-        console.log('✅ Kết nối database thành công qua Sequelize.');
+        console.log('✅ Kết nối database LOCAL thành công.');
     } catch (error) {
-        console.error('❌ Không thể kết nối tới database:', error);
+        console.error('❌ Không thể kết nối tới database LOCAL:', error.message);
+        console.log('💡 Gợi ý: Hãy kiểm tra kỹ Host, Port, User, Password và đảm bảo Database đã được tạo trong pgAdmin.');
     }
 };
 
