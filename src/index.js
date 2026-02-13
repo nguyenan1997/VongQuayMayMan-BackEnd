@@ -4,15 +4,20 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
-const spinRoutes = require('./routes/spinRoutes');
-const sequelize = require('./config/db');
+const userRoutes = require('./routes/userRoutes');
+const { sequelize } = require('./models');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Sync Database
-sequelize.sync({ alter: false }).then(() => {
-    console.log('🔄 Database đã được đồng bộ.');
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
+// Sync Database (Sử dụng alter: true để cập nhật bảng mới)
+sequelize.sync({ alter: true }).then(() => {
+    console.log('🔄 Database đã được đồng bộ (Chỉ bảng User).');
 });
 
 // Middlewares
@@ -22,7 +27,7 @@ app.use(morgan('dev')); // Log yêu cầu truy cập
 app.use(express.json()); // Đọc body JSON
 
 // API Routes
-app.use('/api/v1/spins', spinRoutes);
+app.use('/api/v1/users', userRoutes);
 
 // Xử lý lỗi 404
 app.use((req, res) => {
