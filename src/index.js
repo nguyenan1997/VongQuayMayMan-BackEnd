@@ -16,8 +16,25 @@ const PORT = process.env.PORT || 3001;
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 // Sync Database (Sử dụng alter: true để cập nhật bảng mới)
-sequelize.sync({ alter: true }).then(() => {
+sequelize.sync({ alter: true }).then(async () => {
     console.log('🔄 Database đã được đồng bộ (Chỉ bảng User).');
+
+    // Tạo tài khoản admin mặc định nếu chưa tồn tại
+    const { User } = require('./models');
+    try {
+        const adminExists = await User.findOne({ where: { username: '0912345678' } });
+        if (!adminExists) {
+            await User.create({
+                username: '0912345678',
+                password: 'admin', // Sẽ tự động được mã hóa bởi hook beforeCreate
+                role: 'admin',
+                fullName: 'System Administrator'
+            });
+            console.log('✅ Đã tạo tài khoản admin mặc định (0912345678/admin)');
+        }
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo tài khoản admin:', error.message);
+    }
 });
 
 // Middlewares

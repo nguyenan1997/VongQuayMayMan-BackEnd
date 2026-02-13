@@ -9,11 +9,12 @@ const User = sequelize.define('User', {
         autoIncrement: true
     },
     username: {
-        type: DataTypes.STRING(50),
+        type: DataTypes.STRING(20),
         allowNull: false,
         unique: true,
         validate: {
-            len: [3, 50]
+            is: /^[0-9]+$/i, // Chỉ cho phép chữ số
+            len: [10, 11]    // Độ dài sđt Việt Nam thông thường
         }
     },
     password: {
@@ -23,10 +24,7 @@ const User = sequelize.define('User', {
     email: {
         type: DataTypes.STRING(100),
         allowNull: true,
-        unique: true,
-        validate: {
-            isEmail: true
-        }
+        unique: true
     },
     fullName: {
         type: DataTypes.STRING(100),

@@ -1,15 +1,22 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+// Fix lỗi SELF_SIGNED_CERT_IN_CHAIN khi kết nối Aiven trên Windows
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
+    process.env.DATABASE_URL,
     {
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT,
         dialect: 'postgres',
         logging: process.env.NODE_ENV === 'development' ? console.log : false,
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false
+            }
+        },
+        // Thêm cấu hình này để tương thích tốt hơn với SSL trên môi trường Cloud
+        ssl: true,
         pool: {
             max: 5,
             min: 0,
@@ -17,8 +24,8 @@ const sequelize = new Sequelize(
             idle: 10000
         },
         define: {
-            timestamps: true, // Tự động thêm createdAt và updatedAt
-            underscored: true // Sử dụng snake_case (created_at) thay vì camelCase
+            timestamps: true,
+            underscored: true
         }
     }
 );

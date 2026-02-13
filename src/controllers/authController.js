@@ -9,18 +9,20 @@ const generateToken = (id) => {
 
 exports.register = async (req, res) => {
     try {
-        const { username, password, fullName, email } = req.body;
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ success: false, message: 'Vui lòng nhập số điện thoại và mật khẩu' });
+        }
 
         const userExists = await User.findOne({ where: { username } });
         if (userExists) {
-            return res.status(400).json({ success: false, message: 'Tên đăng nhập đã tồn tại' });
+            return res.status(400).json({ success: false, message: 'Số điện thoại này đã được đăng ký' });
         }
 
         const user = await User.create({
             username,
-            password,
-            fullName,
-            email
+            password
         });
 
         res.status(201).json({
