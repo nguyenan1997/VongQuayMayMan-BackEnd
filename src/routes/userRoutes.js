@@ -22,9 +22,7 @@
  *         fullName:
  *           type: string
  *           description: Họ và tên
- *         email:
- *           type: string
- *           format: email
+ *           example: "Nguyễn Văn A"
  *         role:
  *           type: string
  *           enum: [user, admin]
@@ -54,6 +52,7 @@
  *             required:
  *               - phoneNumber
  *               - password
+ *               - fullName
  *             properties:
  *               phoneNumber:
  *                 type: string
@@ -61,6 +60,9 @@
  *               password:
  *                 type: string
  *                 example: "123456"
+ *               fullName:
+ *                 type: string
+ *                 example: "Nguyễn Văn A"
  *     responses:
  *       201:
  *         description: Đăng ký thành công

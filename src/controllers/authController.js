@@ -9,10 +9,10 @@ const generateToken = (id) => {
 
 exports.register = async (req, res) => {
     try {
-        const { phoneNumber, password } = req.body;
+        const { phoneNumber, password, fullName } = req.body;
 
-        if (!phoneNumber || !password) {
-            return res.status(400).json({ success: false, message: 'Vui lòng nhập số điện thoại và mật khẩu' });
+        if (!phoneNumber || !password || !fullName) {
+            return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ họ tên, số điện thoại và mật khẩu' });
         }
 
         const userExists = await User.findOne({ where: { phoneNumber } });
@@ -22,7 +22,8 @@ exports.register = async (req, res) => {
 
         const user = await User.create({
             phoneNumber,
-            password
+            password,
+            fullName
         });
 
         res.status(201).json({

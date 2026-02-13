@@ -22,14 +22,9 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING(255),
         allowNull: false
     },
-    email: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-        unique: true
-    },
     fullName: {
         type: DataTypes.STRING(100),
-        allowNull: true,
+        allowNull: false,
         field: 'full_name'
     },
     role: {
