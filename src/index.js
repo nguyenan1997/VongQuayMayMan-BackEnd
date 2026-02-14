@@ -15,6 +15,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const userRoutes = require('./routes/userRoutes');
+const prizeRoutes = require('./routes/prizeRoutes');
 const { sequelize } = require('./models');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swagger');
@@ -33,6 +34,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 // 4. API ROUTES
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/prizes', prizeRoutes);
 
 // Xử lý route không tồn tại
 app.use((req, res) => {

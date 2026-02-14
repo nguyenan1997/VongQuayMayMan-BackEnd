@@ -1,4 +1,4 @@
-const { User } = require('../models');
+const { User, Prize } = require('../models');
 const { Op } = require('sequelize');
 const jwt = require('jsonwebtoken');
 
@@ -77,30 +77,63 @@ exports.getMe = async (req, res) => {
 };
 
 exports.updateSpinResult = async (req, res) => {
+    const transaction = await User.sequelize.transaction();
     try {
         const { result } = req.body;
         if (!result) {
             return res.status(400).json({ success: false, message: 'Thiếu kết quả quay thưởng' });
         }
 
-        const user = await User.findByPk(req.user.id);
+        const user = await User.findByPk(req.user.id, { transaction });
 
-        // Kiểm tra nếu người dùng đã có kết quả rồi thì không cho quay nữa
+        // 1. Kiểm tra nếu người dùng đã quay rồi
         if (user.spinResult) {
+            await transaction.rollback();
             return res.status(403).json({
                 success: false,
                 message: 'Bạn đã thực hiện lượt quay và nhận quà rồi!'
             });
         }
 
-        user.spinResult = result;
+        // 2. Tìm giải thưởng dựa trên số vé trúng
+        // App sẽ gửi lên result là con số (ví dụ: 4, 5, 6)
+        const prize = await Prize.findOne({
+            where: {
+                ticketsPerWinner: result,
+                isActive: true
+            },
+            transaction
+        });
+
+        if (!prize) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, message: 'Gói giải thưởng này không tồn tại trong cấu hình' });
+        }
+
+        // 3. Kiểm tra số lượng còn lại
+        if (prize.currentWinners >= prize.maxWinners) {
+            await transaction.rollback();
+            return res.status(403).json({
+                success: false,
+                message: `Gói ${prize.ticketsPerWinner} vé đã hết suất!`
+            });
+        }
+
+        // 4. Cập nhật giải thưởng (tăng số người trúng)
+        prize.currentWinners += 1;
+        await prize.save({ transaction });
+
+        // 5. Cập nhật thông tin User
+        user.spinResult = `${prize.ticketsPerWinner} vé`; // Tự động lưu text "X vé"
         user.lastSpinAt = new Date();
         user.spinCount = (user.spinCount || 0) + 1;
-        await user.save();
+        await user.save({ transaction });
+
+        await transaction.commit();
 
         res.json({
             success: true,
-            message: 'Cập nhật kết quả thành công',
+            message: 'Chúc mừng! Bạn đã nhận được quà.',
             data: {
                 id: user.id,
                 spinResult: user.spinResult,
@@ -108,6 +141,7 @@ exports.updateSpinResult = async (req, res) => {
             }
         });
     } catch (error) {
+        if (transaction) await transaction.rollback();
         res.status(500).json({ success: false, message: error.message });
     }
 };
